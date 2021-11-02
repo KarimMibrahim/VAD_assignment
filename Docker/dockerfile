@@ -1,7 +1,9 @@
 FROM registry.deez.re/research/python-audio-gpu
 
 # install requirements
-RUN pip install -r requirements.txt
+COPY requirements.txt /tmp/
+RUN pip install --requirement /tmp/requirements.txt
+COPY . /tmp/
 
 
 # env variable
