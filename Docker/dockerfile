@@ -1,0 +1,21 @@
+FROM registry.deez.re/research/python-audio-gpu
+
+# install requirements
+RUN pip install -r requirements.txt
+
+
+# env variable
+ENV RESEARCH_CODE=/src_code
+
+# set work directory
+WORKDIR $RESEARCH_CODE
+
+
+ENV PYTHONPATH=$PYTHONPATH:$RESEARCH_CODE
+
+# Avoid default access to all GPU
+ENV CUDA_VISIBLE_DEVICES=3
+
+ENTRYPOINT ["bash" ,"-c","source $DATARD_PATH/research_setenv.sh.dev;$SHELL"]
+
+
