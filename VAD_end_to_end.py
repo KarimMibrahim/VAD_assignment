@@ -121,7 +121,7 @@ def enhance_signal(audio_file, metadata_file, beamformer = "mvdr", denoiser = "S
         enhanced_signal = pra.normalize(enhanced_signal)
 
     # Apply narrowband speech filtering (does not really seem to make things better, but can save memory)
-    if (speech_band_pass == True)
+    if (speech_band_pass == True):
         sos = sps.butter(10, [30, 3000], 'bandpass', fs=fs, output='sos')
         enhanced_signal = sps.sosfilt(sos, enhanced_signal)
         enhanced_signal = pra.normalize(enhanced_signal)
