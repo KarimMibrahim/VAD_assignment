@@ -38,7 +38,7 @@ This repository contains the following item:
 - '**cnn_vad.ipynb**' This notebook contains the implementation for the CNN-based models. It also contains the code for training and testing the model using all possible spatial modules. 
 - '**crnn_vad.ipynb**' Similarly, this notebook contains the implementation for the CRNN-based models.
 - '**playground.ipynb**' This notebook shows some code I was trying to get familiar with pyroomacoustics. 
-- '**vad_end_to_end.py**' his file contains the full code to run both the spatial modules and the DNN-based model on an input file. The chosen model and spatial modules can be passed along with the target file and its metadata. Note: this requires having the pretrained models already available. (Not tested yet)
+- '**vad_end_to_end.py**' This file contains the full code to run both the spatial modules and the DNN-based model on an input file. The chosen model and spatial modules can be passed along with the target file and its metadata. Note: this requires having the pretrained models already available. (Not tested yet)
 - '**requirements.txt**' contains the required packages to run the code. Only needed in case docker is not used.   
 - '**dockerfile**' This file can be used to build and run a docker container with the required libraries pre-installed. 
 

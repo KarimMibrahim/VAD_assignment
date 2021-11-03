@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
 from scipy.io import wavfile
-from scipy.signal import fftconvolve
 import IPython
 import pyroomacoustics as pra
 from pyroomacoustics.denoise import apply_spectral_sub, apply_iterative_wiener
@@ -18,16 +17,12 @@ import torch.optim as optim
 import torchaudio 
 
 from sklearn.metrics import f1_score,accuracy_score, precision_score, recall_score, classification_report, roc_auc_score
-from scipy.special import softmax
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 from tqdm import tqdm
 
 FRAMES_3SEC = 92
 
-# Load  audio file
-# load metadata
-# apply spatial processing (pass chosen pipeline)
 # Defining a room through rt60 
 def get_room(rt60_tgt, fs): 
     # Setting up room dims
@@ -58,18 +53,6 @@ def enhance_signal(audio_file, metadata_file, beamformer = "mvdr", denoiser = "S
     source_azimuth, source_elevation =  meta_data['source_doa']
     noise_azimuth, noise_elevation = meta_data['noise_doa']
 
-    # Compute noise variance [Not sure about this bit], is SNR from the source speech?? 
-    # Maybe better use the first 3 seconds for that? 
-    SNR = meta_data['SNR']
-    if (SNR != None):
-        SNR = int(SNR)
-        mono_signal = 0.5 * (signal[:,0] + signal[:,1])
-        # compute Signal power [not correct if SNR is pure speech to noise instead of noisy speech to noise]
-        P_s = sp.sum(mono_signal*mono_signal)/mono_signal.size 
-        sigma2_n = P_s / 10**(SNR/10) # compute noise power
-    else:
-        sigma2_n = 5e-7 # set small value for noise power
-
     # Putting sources in room
     # Assume all sources are 1 meter away from the center (but if SNR is pure speech to noise, 
     # maybe we can set the distance for each source proportional to the SNR)
@@ -85,6 +68,18 @@ def enhance_signal(audio_file, metadata_file, beamformer = "mvdr", denoiser = "S
     # Here I pass a dummy signal to the source just to simulate. We ignore this signal later
     room_bf.add_source(speech_source, delay=0., signal=signal.T[0,:])
     room_bf.add_source(noise_source, delay=0, signal=np.zeros_like(signal.T[0,:]))
+    
+    # Compute noise variance [Not sure about this bit], is SNR from the source speech?? 
+    # Maybe better use the first 3 seconds for that? 
+    SNR = meta_data['SNR']
+    if (SNR != None):
+        SNR = int(SNR)
+        mono_signal = 0.5 * (signal[:,0] + signal[:,1])
+        # compute Signal power [not correct if SNR is pure speech to noise instead of noisy speech to noise]
+        P_s = sp.sum(mono_signal*mono_signal)/mono_signal.size 
+        sigma2_n = P_s / 10**(SNR/10) # compute noise power
+    else:
+        sigma2_n = 5e-7 # set small value for noise power
 
     # define our beamformer
     Lg_t = 0.100                # filter size in seconds
@@ -252,11 +247,26 @@ def run(model_file, meta_file, audio_file):
     output_file, enhanced_signal, fs = enhance_signal(audio_file, metadata_file)
     X_mel, labels = generate_mels_labeled(output_file,meta_file)
     rounded_output, outputs, labels = run_VAD(vad_model, X_mel)
+    
     # print accuracy
+    accuracy = (rounded_output == labels).sum() / len(labels)
+    print("output accuracy = %0.2f%%" % (accuracy*100))
+    
+    # Plot GT and Predictions and the Melspec on top of each other
+    f, (ax1, ax2) = plt.subplots(2, 1, figsize=(14,6))
+    lb.display.specshow(X, sr=fs, x_axis='time', y_axis='hz' , ax = ax1)
+    ax2.plot(np.arange(0,X.shape[1]) , labels[0,:], linewidth=1.5 , c='b')
+    ax2.plot(np.arange(0,X.shape[1]) , rounded_output[0,:]*1.2, linewidth=1.5 , c='r')
+    plt.margins(x=0)
     # Save segmented bit?
 
+    
 if __name__ == "__main__":
-    model_file = ""
-    meta_file = ""
-    audio_file = ""
+    # [TODO] Add parsers
+    n_fft=1024
+    hop = int(n_fft/2)
+    TopDir = "/home/karim/Desktop/Sonos_Assignment/"
+    model_file = TopDir + "saved_models/" + "das_spectral"
+    meta_file = TopDir + "vad_train_set/metadata/" + "f1_0a4e47f1-184a-473a-a466-64154ff4703f.json"
+    audio_file = TopDir + "vad_train_set/audio/" + "f1_0a4e47f1-184a-473a-a466-64154ff4703f.wav"
     run(model_file, meta_file, audio_file)
